@@ -6,6 +6,32 @@ import numpy as np
 import os
 import pandas as pd
 
+def getTrackerXY_Points(fname):
+    """
+     Read Cheetah Tracker data. Good for determining epochs
+     (sleep times, behavior)
+    """
+ 
+    with open(fname, 'rb') as f:
+      data = f.read()[16384:]
+    f.close()
+
+ 
+    recsize = 1828
+    nrecs = len(data)//recsize
+    print("number of records: ", nrecs)
+    xloc = np.zeros(nrecs)
+    yloc = np.zeros(nrecs)
+    hdir = np.zeros(nrecs)
+    ts = np.zeros(nrecs)
+
+    for i in range(nrecs):
+        recoffset = recsize*i
+        xloc[i] = struct.unpack('i', data[recoffset+1615:recoffset+1619])[0]
+        yloc[i] = struct.unpack('i', data[recoffset+1619:recoffset+1623])[0]
+        ts[i] = struct.unpack('q', data[recoffset+6:recoffset+14])[0]
+
+    return xloc.astype(int), yloc.astype(int), ts.astype(int)
 
 def readPVDfile(pvdfile):
   """reads NSMA PVD file and returns timestamps and x,y."""
@@ -13,6 +39,7 @@ def readPVDfile(pvdfile):
   with open(pvdfile, 'rb') as f:
     n_lines = sum(1 for line in f)
   f.close()
+
   ts = np.zeros(n_lines, dtype=np.uint64)
   x = np.zeros(n_lines)
   y = np.zeros(n_lines)
@@ -50,7 +77,7 @@ def getVideoData(fname):
   
   with open(fname, 'rb') as f:
     data = f.read()[16384:]
-    f.close()
+  f.close()
   
   nrecords = int(len(data)/1828)
   print("Number of Records: {}".format(nrecords))
